@@ -61,5 +61,7 @@ namespace CompanyEmployees.Migrations
             migrationBuilder.DropTable(
                 name: "Companies");
         }
+
+
     }
 }

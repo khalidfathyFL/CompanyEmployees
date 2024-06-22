@@ -1,5 +1,7 @@
 ﻿using Contracts;
 using LoggerService;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Formatters;
 using Microsoft.EntityFrameworkCore;
 using Repository;
 using Service;
@@ -17,7 +19,12 @@ namespace CompanyEmployees.Extensions
     /// allow any method with methods is to allow for example get or post only
     /// allow any header , with headers is to allow specific headers like accept and content type
     public static void ConfigureCors(this IServiceCollection services) => services.AddCors(
-      opt => { opt.AddPolicy("CorsPolicy", builder => builder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin()); });
+      opt =>
+      {
+        opt.AddPolicy("CorsPolicy", builder => builder.AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin().
+          WithExposedHeaders("X-Pagination"));
+          
+      });
 
     /// <summary>
     /// Configuring internet information services(IIS) integration
@@ -75,6 +82,34 @@ namespace CompanyEmployees.Extensions
       IConfiguration configuration) =>
       services.AddDbContext<RepositoryContext>(opts =>
         opts.UseSqlServer(configuration.GetConnectionString("sqlConnection")));
+
+    // adding a created csv formatter to the output formatters
+    public static IMvcBuilder AddCustomCSVFormatter(this IMvcBuilder builder) =>
+      builder.AddMvcOptions(config => config.OutputFormatters.Add(new
+        CsvOutputFormatter()));
+
+    public static void AddCustomMediaTypes(this IServiceCollection services)
+    {
+      services.Configure<MvcOptions>(config =>
+      {
+        var systemTextJsonOutputFormatter = config.OutputFormatters
+          .OfType<SystemTextJsonOutputFormatter>()?
+          .FirstOrDefault();
+        if (systemTextJsonOutputFormatter != null)
+        {
+          systemTextJsonOutputFormatter.SupportedMediaTypes
+            .Add("application/vnd.codemaze.hateoas+json");
+        }
+        var xmlOutputFormatter = config.OutputFormatters
+          .OfType<XmlDataContractSerializerOutputFormatter>()?
+          .FirstOrDefault();
+        if (xmlOutputFormatter != null)
+        {
+          xmlOutputFormatter.SupportedMediaTypes
+            .Add("application/vnd.codemaze.hateoas+xml");
+        }
+      });
+    }
   }
 
 
